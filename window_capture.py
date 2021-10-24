@@ -13,22 +13,21 @@ class WindowCapture2:
        
 
     def get_screenshot(self, monitor_id=2) -> np.ndarray:
-        screens=(getDisplayRects())
-
+        # screens=(getDisplayRects())
         screens = [(0, 0, 3840, 2160), (-3840, 0, -3840*2, 2160), (3840, 0, 3840*2, 2160)]
-        # scaling_factor = 1/1.25
         scaling_factor = 1
         
         def scale_screen(screen, scaling_factor):
             x, y, w, h = screen
             return (int(x * scaling_factor), int(y * scaling_factor), int(w * scaling_factor), int(h * scaling_factor))
 
-        screens = [scale_screen(screen, scaling_factor) for screen in screens]
-        print(screens)
+        if scaling_factor is not 1:
+            screens = [scale_screen(screen, scaling_factor) for screen in screens]
+        # print(screens)
         # return screens[monitor_id]
         rect = getRectAsImage(screens[monitor_id])
         open_cv_image = np.array(rect)
-        open_cv_image = cv2.cvtColor(open_cv_image, cv2.COLOR_BGR2RGB)
+        open_cv_image = cv2.cvtColor(open_cv_image, cv2.COLOR_BGR2RGB) 
         return open_cv_image
 
 
