@@ -3,6 +3,8 @@ import numpy as np
 import os
 from time import time
 from window_capture import WindowCapture, WindowCapture2
+import win32gui, win32ui, win32con
+
 
 USE_SCREENSHOT = True
 
@@ -42,6 +44,17 @@ def find_characters(screenshot, image_to_find, threshold=0.5):
 
     return screenshot
 
+
+def rotate_image(img):
+    """Rotates an image 90 degrees clockwise"""
+    return np.rot90(img)
+
+
+def gaussian_blur(img, kernel_size):
+    """Blurs an image with a gaussian kernel"""
+    return cv2.GaussianBlur(img, (kernel_size, kernel_size), 0)
+
+
 # def slider():
 #     cv2.namedWindow('image')
 #     threshold = 100 
@@ -57,41 +70,40 @@ def find_characters(screenshot, image_to_find, threshold=0.5):
 #             break
 #     cv2.destroyAllWindows()
 
+
+def noise_alpha(img):
+    """Adds noise to the RGB channels if the alpha is 0"""
+    for i in range(img.shape[0]):
+        for j in range(img.shape[1]):
+            if img[i, j, 3] == 0:
+                img[i, j, 0] = np.random.randint(0, 255)
+                img[i, j, 1] = np.random.randint(0, 255)
+                img[i, j, 2] = np.random.randint(0, 255)
+    return img
+
+
+
+def print_cursor_location():
+    """Prints the pixel location of the cursor"""
+    print(win32gui.GetCursorPos())
+
+
 def main():
-
-    # slider()
-    # return
-
     cv2.namedWindow('Computer Vision')
-    # Change the working directory to the folder this script is in.q
-    # Doing this because I'll be putting the files from each video in their own folder on GitHub
-    # os.chdir(os.path.dirname(os.path.abspath(__file__)))
-
-    # initialize the WindowCapture classq
     wincap = WindowCapture2('Storybook Brawl')
-
-    # example_image = cv2.imread("C:/Users/awlego/Documents/Repositories/brawl_bot/images/characters/Card_art_-_B-a-a-d_Billy_Gruff_tiny.png")
-    # example_image = cv2.resize(example_image, (example_image.shape[1] // 1, example_image.shape[0] // 2))
-    # print(example_image.shape)
-    
-
-
-
-    # cv2.imshow('Example image', example_image[200:400, 200:400])
-    # cv2.waitKey(0)q
-    # cv2.destroyAllWindows()
 
     if USE_SCREENSHOT:
         screenshot = cv2.imread("C:/Users/awlego/Documents/Repositories/brawl_bot/images/example_boards/billy_test.png")
         screenshot = cv2.resize(screenshot, (3072, 1728)) # Resize image to my scaled display
-        # screenshot = cv2.resize(screenshot, (3072//4, 1728//4)) # Resize image to my scaled display
-
-        screenshot = black_white_filter(screenshot, 100)
-
+        # screenshot = black_white_filter(screenshot, 100)
 
     cv2.namedWindow('Sliders')
     cv2.createTrackbar('threshold', 'Sliders', 0, 255, lambda x: x)
-    cv2.createTrackbar('find_characters_threshold', 'Sliders', 0, 100, lambda x: x)
+    cv2.createTrackbar('find_characters_threshold', 'Sliders', 100, 100, lambda x: x)
+    cv2.createTrackbar('find_image_scale', 'Sliders', 100, 200, lambda x: x)
+
+    example_image = cv2.imread("C:/Users/awlego/Documents/Repositories/brawl_bot/images/good_frame_partial.png",  cv2.IMREAD_UNCHANGED)
+    example_image = noise_alpha(example_image)
 
     loop_time = time()
     while(True):
@@ -105,19 +117,21 @@ def main():
         threshold = cv2.getTrackbarPos('threshold', 'Sliders')
         find_characters_threshold = cv2.getTrackbarPos('find_characters_threshold', 'Sliders')
 
-        img = cv2.imread('C:/Users/awlego/Documents/Repositories/brawl_bot/images/example_boards/billy_test.png')
+        img = cv2.imread('C:/Users/awlego/Documents/Repositories/brawl_bot/images/example_boards/billy_test.png', cv2.IMREAD_UNCHANGED)
         img = cv2.resize(img, (3072, 1728)) # Resize image to my scaled display
-        img = black_white_filter(img, threshold)
+        # img = black_white_filter(img, threshold)
 
-        example_image = cv2.imread("C:/Users/awlego/Documents/Repositories/brawl_bot/images/characters/Card_art_-_B-a-a-d_Billy_Gruff_tiny.png")
-        example_image = black_white_filter(example_image, threshold)
+        example_image = cv2.imread("C:/Users/awlego/Documents/Repositories/brawl_bot/images/good_frame_partial.png",  cv2.IMREAD_UNCHANGED)
+        example_image = noise_alpha(example_image)
+        example_image_scale = cv2.getTrackbarPos('find_image_scale', 'Sliders')
+        example_image = cv2.resize(example_image, (int(example_image.shape[1] * example_image_scale / 100), int(example_image.shape[0] * example_image_scale / 100)))
+        # example_image = black_white_filter(example_image, threshold)
         cv2.imshow('Example image', example_image)
 
-
         img = find_characters(img, example_image, find_characters_threshold)
-
-        # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         cv2.imshow('Storybook Brawl Tracker', img)
+
+        print_cursor_location()
 
 
         # debug the loop rate
